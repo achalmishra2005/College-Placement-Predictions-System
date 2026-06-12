@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistics | PlacementAI</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% include '_navbar.html' %}
+<div class="page-wrapper">
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="gradient-text fw-bold"><i class="fas fa-chart-bar me-2"></i>Model Statistics</h2>
+    <p class="text-muted">Machine learning model performance metrics</p>
+  </div>
+
+  {% if not model_info %}
+  <div class="glass-card p-4 text-center mb-5">
+    <p class="text-muted mb-0">Model not trained yet. Run <code>python train_model.py</code> to see metrics.</p>
+  </div>
+  {% else %}
+  <!-- Best Model Card -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-md-8">
+      <div class="glass-card p-4 text-center">
+        <div class="badge bg-primary px-3 py-2 mb-3"><i class="fas fa-trophy me-2"></i>Best Performing Model</div>
+        <h4 class="gradient-text fw-bold">{{ model_info.model_name }}</h4>
+        <div class="row g-3 mt-3">
+          {% for label, key, color in [('Accuracy','accuracy','primary'),('Precision','precision','success'),('Recall','recall','warning'),('F1 Score','f1','info')] %}
+          <div class="col-6 col-md-3">
+            <div class="glass-card p-3">
+              <div class="fs-3 fw-bold text-{{ color }}">{{ model_info[key] }}%</div>
+              <div class="text-muted small">{{ label }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Models Comparison -->
+  <h5 class="fw-semibold mb-4">Model Comparison</h5>
+  <div class="row g-4 mb-5">
+    {% for name, metrics in model_info.all_results.items() %}
+    <div class="col-md-4">
+      <div class="glass-card p-4 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="mb-0 fw-semibold">{{ name }}</h6>
+          {% if name == model_info.model_name %}
+          <span class="badge bg-success"><i class="fas fa-star me-1"></i>Best</span>
+          {% endif %}
+        </div>
+        {% for metric, val in metrics.items() %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>{{ metric.title() }}</span>
+            <span class="fw-semibold text-white">{{ val }}%</span>
+          </div>
+          <div class="progress" style="height:6px">
+            <div class="progress-bar bg-primary" style="width:{{ val }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Branch Stats -->
+  {% if branches %}
+  <h5 class="fw-semibold mb-4">Branch-wise Analysis</h5>
+  <div class="glass-card p-4">
+    <div class="table-responsive">
+      <table class="table table-hover table-dark mb-0">
+        <thead>
+          <tr>
+            <th>Branch</th><th>Total</th><th>Placed</th>
+            <th>Not Placed</th><th>Avg CGPA</th><th>Placement Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in branches %}
+          {% set rate = (b.placed / b.total * 100)|round(1) if b.total > 0 else 0 %}
+          <tr>
+            <td><span class="badge bg-primary">{{ b.branch }}</span></td>
+            <td>{{ b.total }}</td>
+            <td class="text-success">{{ b.placed }}</td>
+            <td class="text-danger">{{ b.total - b.placed }}</td>
+            <td>{{ b.avg_cgpa or '—' }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height:8px">
+                  <div class="progress-bar {{ 'bg-success' if rate>=60 else 'bg-warning' if rate>=40 else 'bg-danger' }}"
+                       style="width:{{ rate }}%"></div>
+                </div>
+                <span class="small fw-semibold">{{ rate }}%</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+</div>
+{% include '_footer.html' %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
