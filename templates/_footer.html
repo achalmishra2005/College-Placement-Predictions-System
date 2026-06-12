@@ -1,0 +1,25 @@
+<footer class="glass-footer mt-5 py-4">
+  <div class="container text-center">
+    <p class="mb-1 text-muted">
+      <i class="fas fa-graduation-cap me-2 text-primary"></i>
+      <strong>College Placement Prediction System</strong>
+    </p>
+    <p class="text-muted small mb-0">
+      Built with <i class="fas fa-heart text-danger"></i> using Flask, scikit-learn & Bootstrap 5 &nbsp;|&nbsp;
+      <span class="text-primary">Mini Project — CSE</span>
+    </p>
+  </div>
+</footer>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div id="flash-container" style="position:fixed;top:80px;right:20px;z-index:9999;min-width:300px">
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show shadow" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

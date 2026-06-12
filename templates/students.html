@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Records | PlacementAI</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% include '_navbar.html' %}
+<div class="page-wrapper">
+<div class="container-fluid py-4 px-4">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h3 class="gradient-text fw-bold mb-0"><i class="fas fa-users me-2"></i>Student Records</h3>
+      <small class="text-muted">{{ students|length }} records found</small>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/admin/students/add" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Student</a>
+      <a href="/admin/export" class="btn btn-outline-success"><i class="fas fa-download me-1"></i>Export CSV</a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="glass-card p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="Search name, roll no, email..."
+               value="{{ q }}">
+      </div>
+      <div class="col-md-2">
+        <select name="branch" class="form-select">
+          <option value="">All Branches</option>
+          {% for b in branches %}
+          <option value="{{ b.branch }}" {{ 'selected' if sel_branch==b.branch }}>{{ b.branch }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="placed" class="form-select">
+          <option value="">All Status</option>
+          <option value="1" {{ 'selected' if sel_placed=='1' }}>Placed</option>
+          <option value="0" {{ 'selected' if sel_placed=='0' }}>Not Placed</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Filter</button>
+      </div>
+      <div class="col-md-2">
+        <a href="/admin/students" class="btn btn-outline-secondary w-100"><i class="fas fa-times me-1"></i>Clear</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="glass-card">
+    <div class="table-responsive">
+      <table class="table table-hover table-dark mb-0 align-middle">
+        <thead class="table-header">
+          <tr>
+            <th>#</th><th>Name</th><th>Roll No</th><th>Branch</th><th>CGPA</th>
+            <th>Aptitude</th><th>Coding</th><th>Projects</th>
+            <th>Status</th><th>Probability</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td class="text-muted small">{{ loop.index }}</td>
+            <td><strong>{{ s.name }}</strong><br><small class="text-muted">{{ s.email }}</small></td>
+            <td><code>{{ s.roll_no }}</code></td>
+            <td><span class="badge bg-primary">{{ s.branch }}</span></td>
+            <td><span class="{{ 'text-success' if s.cgpa >= 7.5 else 'text-warning' if s.cgpa >= 6 else 'text-danger' }}">{{ s.cgpa }}</span></td>
+            <td>{{ s.aptitude_score }}</td>
+            <td>{{ s.coding_score }}</td>
+            <td>{{ s.projects }}</td>
+            <td>
+              {% if s.prediction == 1 %}
+              <span class="badge bg-success"><i class="fas fa-check me-1"></i>Placed</span>
+              {% elif s.prediction == 0 %}
+              <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Not Placed</span>
+              {% else %}
+              <span class="badge bg-secondary">N/A</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.probability %}
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height:6px">
+                  <div class="progress-bar {{ 'bg-success' if s.prediction==1 else 'bg-danger' }}"
+                       style="width:{{ s.probability }}%"></div>
+                </div>
+                <small>{{ s.probability }}%</small>
+              </div>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="/admin/students/edit/{{ s.id }}" class="btn btn-sm btn-outline-primary">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <form method="POST" action="/admin/students/delete/{{ s.id }}"
+                      onsubmit="return confirm('Delete {{ s.name }}?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="11" class="text-center py-5 text-muted">
+              <i class="fas fa-inbox fa-3x mb-3 d-block opacity-25"></i>
+              No students found. <a href="/admin/students/add">Add one!</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% include '_footer.html' %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

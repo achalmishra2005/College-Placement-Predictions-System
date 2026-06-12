@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Student | PlacementAI</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% include '_navbar.html' %}
+<div class="page-wrapper">
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center mb-4">
+        <a href="/admin/students" class="btn btn-sm btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="gradient-text fw-bold mb-0"><i class="fas fa-edit me-2"></i>Edit Student</h3>
+      </div>
+
+      {% if student.prediction is not none %}
+      <div class="alert {{ 'alert-success' if student.prediction==1 else 'alert-danger' }} mb-4">
+        <i class="fas fa-{{ 'check-circle' if student.prediction==1 else 'times-circle' }} me-2"></i>
+        Current prediction: <strong>{{ 'Likely Placed' if student.prediction==1 else 'Needs Improvement' }}</strong>
+        ({{ student.probability }}% chance)
+      </div>
+      {% endif %}
+
+      <div class="glass-card p-4">
+        <form method="POST" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <h6 class="section-divider mb-3"><i class="fas fa-user me-2"></i>Personal Information</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Full Name *</label>
+              <input type="text" name="name" class="form-control" required value="{{ student.name }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Roll Number *</label>
+              <input type="text" name="roll_no" class="form-control" required value="{{ student.roll_no }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" value="{{ student.email or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Branch *</label>
+              <select name="branch" class="form-select" required>
+                {% for b in ['CSE','IT','ECE','EEE','ME','CE'] %}
+                <option value="{{ b }}" {{ 'selected' if student.branch==b }}>{{ b }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <h6 class="section-divider mb-3"><i class="fas fa-book me-2"></i>Academic Details</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">CGPA *</label>
+              <input type="number" name="cgpa" class="form-control" step="0.01" min="0" max="10" required value="{{ student.cgpa }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">10th %</label>
+              <input type="number" name="tenth_percentage" class="form-control" step="0.01" min="0" max="100" required value="{{ student.tenth_percentage }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">12th %</label>
+              <input type="number" name="twelfth_percentage" class="form-control" step="0.01" min="0" max="100" required value="{{ student.twelfth_percentage }}">
+            </div>
+          </div>
+
+          <h6 class="section-divider mb-3"><i class="fas fa-star me-2"></i>Skills & Experience</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">Aptitude Score</label>
+              <input type="number" name="aptitude_score" class="form-control" min="0" max="100" required value="{{ student.aptitude_score }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Coding Score</label>
+              <input type="number" name="coding_score" class="form-control" min="0" max="100" required value="{{ student.coding_score }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Communication</label>
+              <input type="number" name="communication_score" class="form-control" min="0" max="100" required value="{{ student.communication_score }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Internships</label>
+              <select name="internship" class="form-select">
+                {% for i in range(4) %}<option value="{{ i }}" {{ 'selected' if student.internship==i }}>{{ i }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Projects</label>
+              <select name="projects" class="form-select">
+                {% for i in range(7) %}<option value="{{ i }}" {{ 'selected' if student.projects==i }}>{{ i }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Backlogs</label>
+              <select name="backlogs" class="form-select">
+                {% for i in range(6) %}<option value="{{ i }}" {{ 'selected' if student.backlogs==i }}>{{ i }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary glow-btn px-4">
+              <i class="fas fa-save me-2"></i>Update & Re-predict
+            </button>
+            <a href="/admin/students" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% include '_footer.html' %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
