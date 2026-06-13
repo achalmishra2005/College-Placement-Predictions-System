@@ -1,4 +1,4 @@
-# College Placement Prediction System
+# PlacementAI – AI Placement Intelligence Platform
 
 An AI-powered Flask web app that predicts whether a student is likely to be
 placed based on academic and skill parameters, with an admin panel, analytics
