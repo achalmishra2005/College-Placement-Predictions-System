@@ -62,7 +62,7 @@ python train_model.py
 python app.py
 ```
 
-Open **Achalmishra123.pythonanywhere.com**.
+Open=**Achalmishra123.pythonanywhere.com**.
 
 **Default admin login:** `admin` / `admin123` (change via `.env`).
 The default password is automatically **hashed** on first run, and any legacy
