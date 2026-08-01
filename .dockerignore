@@ -1,10 +1,16 @@
 .venv/
 venv/
+.env
+.env.*
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .git/
 .gitignore
-.env
 *.log
 database/*.db
+database/*.sqlite3
+static/uploads/*
+!static/uploads/.gitkeep
 README.md
