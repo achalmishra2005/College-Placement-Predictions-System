@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Company Applications{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h3 class="gradient-text mb-1">Applications</h3>
+      <p class="text-muted mb-0">Track candidates by status.</p>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    {% for app in applications %}
+    <div class="col-12">
+      <div class="glass-card p-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+          <div>
+            <h5 class="mb-1">{{ app.student_name }}</h5>
+            <p class="text-muted mb-1">{{ app.student_email }} • {{ app.title }}</p>
+            <p class="mb-2">Status: <span class="badge bg-primary">{{ app.status|title }}</span></p>
+          </div>
+          <form method="POST" action="{{ url_for('update_application_status', application_id=app.id) }}" class="d-flex gap-2 flex-wrap">
+            <select class="form-select" name="status">
+              <option value="applied" {% if app.status == 'applied' %}selected{% endif %}>Applied</option>
+              <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+              <option value="interview" {% if app.status == 'interview' %}selected{% endif %}>Interview</option>
+              <option value="selected" {% if app.status == 'selected' %}selected{% endif %}>Selected</option>
+              <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+            <button type="submit" class="btn btn-outline-light">Update</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+      <div class="glass-card p-4 text-center text-muted">No applications received yet.</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-lg glass-navbar fixed-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+      <i class="fas fa-graduation-cap me-2 text-primary"></i>
+      <span class="gradient-text">PlacementAI</span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav ms-auto align-items-center gap-1">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('predict') }}"><i class="fas fa-magic me-1"></i>Predict</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('statistics') }}"><i class="fas fa-chart-bar me-1"></i>Statistics</a></li>
+        {% if session.user_id %}
+          {% if session.user_role == 'admin' %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-chart-pie me-1"></i>Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('students') }}"><i class="fas fa-users me-1"></i>Students</a></li>
+          {% elif session.user_role == 'company' %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('company_dashboard') }}"><i class="fas fa-briefcase me-1"></i>Company</a></li>
+          {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('student_dashboard') }}"><i class="fas fa-user-graduate me-1"></i>My Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('student_profile') }}"><i class="fas fa-id-card me-1"></i>Profile</a></li>
+          {% endif %}
+          <li class="nav-item"><a class="nav-link text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-1"></i>Logout</a></li>
+        {% else %}
+          <li class="nav-item"><a class="btn btn-primary btn-sm px-3" href="{{ url_for('login', role='admin') }}"><i class="fas fa-lock me-1"></i>Admin</a></li>
+          <li class="nav-item"><a class="btn btn-outline-light btn-sm px-3" href="{{ url_for('register') }}"><i class="fas fa-user-plus me-1"></i>Register</a></li>
+        {% endif %}
+        <li class="nav-item">
+          <button class="btn btn-outline-secondary btn-sm ms-2" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+            <i class="fas fa-moon" id="themeIcon"></i>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

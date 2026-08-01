@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Resume Analysis | PlacementAI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    /* ── AI Analysis Page Scoped Styles ── */
+    .score-ring-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+    .score-ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+    .score-ring-num{display:block;font-size:2.4rem;font-weight:800;font-family:var(--font-display);line-height:1;}
+    .score-ring-label{display:block;font-size:0.72rem;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;}
+    .score-ring circle{transition:stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1);}
+
+    .section-bar{height:8px;border-radius:99px;background:rgba(255,255,255,0.06);overflow:hidden;margin-bottom:0.6rem;}
+    .section-bar-fill{height:100%;border-radius:99px;transition:width 1s ease;}
+
+    .skill-badge{display:inline-block;padding:0.35rem 0.85rem;border-radius:50px;font-size:0.78rem;font-weight:500;margin:0.2rem;border:1px solid;transition:transform .2s,box-shadow .2s;}
+    .skill-badge:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+    .skill-badge.green{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.35);color:#86efac;}
+    .skill-badge.red{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.35);color:#fca5a5;}
+    .skill-badge.orange{background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.35);color:#fcd34d;}
+    .skill-badge.blue{background:rgba(99,102,241,0.12);border-color:rgba(99,102,241,0.35);color:#a5b4fc;}
+    .skill-badge.cyan{background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.35);color:#67e8f9;}
+    .skill-badge.purple{background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.35);color:#c4b5fd;}
+
+    .career-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:1.5rem;text-align:center;transition:transform .3s,border-color .3s,box-shadow .3s;cursor:default;}
+    .career-card:hover{transform:translateY(-6px);border-color:var(--border-hover);box-shadow:0 12px 40px rgba(99,102,241,0.18);}
+    .career-icon{width:56px;height:56px;background:var(--gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;margin:0 auto 0.8rem;box-shadow:0 0 18px var(--primary-glow);}
+
+    .timeline-v{position:relative;padding-left:32px;}
+    .timeline-v::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--primary),rgba(6,182,212,0.4));}
+    .timeline-step{position:relative;margin-bottom:1.8rem;}
+    .timeline-step:last-child{margin-bottom:0;}
+    .timeline-dot{position:absolute;left:-32px;top:2px;width:24px;height:24px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;box-shadow:0 0 12px var(--primary-glow);z-index:2;}
+    .timeline-content{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;transition:border-color .3s;}
+    .timeline-content:hover{border-color:var(--border-hover);}
+    .timeline-week{font-family:var(--font-display);font-weight:600;font-size:0.95rem;margin-bottom:0.4rem;color:#a5b4fc;}
+
+    .suggestion-item{display:flex;gap:0.8rem;align-items:flex-start;padding:0.8rem 1rem;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:0.5rem;transition:border-color .3s;}
+    .suggestion-item:hover{border-color:var(--border-hover);}
+    .suggestion-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;margin-top:2px;}
+
+    .empty-state{text-align:center;padding:2.5rem 1rem;}
+    .empty-state i{font-size:2.5rem;color:var(--text-muted);margin-bottom:1rem;}
+    .empty-state p{color:var(--text-muted);max-width:400px;margin:0 auto;}
+
+    .parsed-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:1rem 1.2rem;margin-bottom:0.8rem;}
+    .parsed-section-title{font-size:0.78rem;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;}
+
+    .priority-high{border-left:3px solid #ef4444;}
+    .priority-med{border-left:3px solid #f59e0b;}
+    .priority-low{border-left:3px solid #22c55e;}
+
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+    .anim-delay-1{animation:fadeInUp .6s ease .1s both;}
+    .anim-delay-2{animation:fadeInUp .6s ease .2s both;}
+    .anim-delay-3{animation:fadeInUp .6s ease .3s both;}
+    .anim-delay-4{animation:fadeInUp .6s ease .4s both;}
+    .anim-delay-5{animation:fadeInUp .6s ease .5s both;}
+    .anim-delay-6{animation:fadeInUp .6s ease .6s both;}
+    .anim-delay-7{animation:fadeInUp .6s ease .7s both;}
+  </style>
+</head>
+<body>
+{% include '_navbar.html' %}
+<div class="page-wrapper pt-5">
+  <div class="container py-5">
+
+    {# ═══════════ 1. HEADER SECTION ═══════════ #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4 animate-in">
+      <div>
+        <h2 class="gradient-text fw-bold mb-1">
+          <i class="fas fa-brain me-2"></i>AI Resume Analysis
+        </h2>
+        <p class="text-muted mb-0">Deep-learning powered insights into your resume, skills, and placement readiness.</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-light btn-sm">
+          <i class="fas fa-arrow-left me-1"></i>Dashboard
+        </a>
+        <form method="POST" action="{{ url_for('re_analyze_resume') }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm glow-btn text-white">
+            <i class="fas fa-sync-alt me-1"></i>Re-Analyze Resume
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {# ═══════════ 2. SCORE OVERVIEW ═══════════ #}
+    <div class="row g-4 mb-4">
+      {# ── Resume Score Card ── #}
+      <div class="col-lg-6 anim-delay-1">
+        <div class="glass-card p-4 h-100">
+          <h6 class="text-muted mb-3"><i class="fas fa-file-alt me-2"></i>Resume Score</h6>
+          <div class="text-center mb-3">
+            {% set rs_color = '#22c55e' if resume_score >= 70 else ('#f59e0b' if resume_score >= 50 else '#ef4444') %}
+            <div class="score-ring-wrap">
+              <svg width="160" height="160" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+                <circle cx="80" cy="80" r="70" fill="none" stroke="{{ rs_color }}" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="{{ (resume_score / 100 * 439.82)|round(2) }} 439.82"
+                  transform="rotate(-90 80 80)" class="score-ring"/>
+              </svg>
+              <div class="score-ring-text">
+                <span class="score-ring-num" style="color:{{ rs_color }};">{{ resume_score }}</span>
+                <span class="score-ring-label">out of 100</span>
+              </div>
+            </div>
+          </div>
+
+          {# Section-wise breakdown bars #}
+          {% if resume_analysis and resume_analysis.section_scores %}
+          <h6 class="text-muted mb-2 mt-2" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.6px;">Section Breakdown</h6>
+          {% for section, score in resume_analysis.section_scores.items() %}
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <small class="text-muted">{{ section|replace('_',' ')|title }}</small>
+              <small class="fw-semibold">{{ score }}%</small>
+            </div>
+            <div class="section-bar">
+              {% set bar_color = '#22c55e' if score >= 70 else ('#f59e0b' if score >= 50 else '#ef4444') %}
+              <div class="section-bar-fill" style="width:{{ score }}%;background:{{ bar_color }};"></div>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="text-center mt-2">
+            <small class="text-muted">Upload a resume to see section-wise breakdown</small>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Placement Readiness Card ── #}
+      <div class="col-lg-6 anim-delay-2">
+        <div class="glass-card p-4 h-100">
+          <h6 class="text-muted mb-3"><i class="fas fa-rocket me-2"></i>Placement Readiness</h6>
+          <div class="text-center mb-3">
+            {% set pr_color = '#22c55e' if readiness_score >= 70 else ('#f59e0b' if readiness_score >= 50 else '#ef4444') %}
+            <div class="score-ring-wrap">
+              <svg width="160" height="160" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+                <circle cx="80" cy="80" r="70" fill="none" stroke="{{ pr_color }}" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="{{ (readiness_score / 100 * 439.82)|round(2) }} 439.82"
+                  transform="rotate(-90 80 80)" class="score-ring"/>
+              </svg>
+              <div class="score-ring-text">
+                <span class="score-ring-num" style="color:{{ pr_color }};">{{ readiness_score }}</span>
+                <span class="score-ring-label">Readiness</span>
+              </div>
+            </div>
+          </div>
+
+          {# Strengths & Weaknesses Badges #}
+          {% if resume_analysis and resume_analysis.strengths %}
+          <div class="mb-2">
+            <small class="text-muted d-block mb-1"><i class="fas fa-check-circle text-success me-1"></i>Strengths</small>
+            {% for s in resume_analysis.strengths %}
+            <span class="skill-badge green">{{ s }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if resume_analysis and resume_analysis.weaknesses %}
+          <div>
+            <small class="text-muted d-block mb-1"><i class="fas fa-exclamation-circle text-danger me-1"></i>Weaknesses</small>
+            {% for w in resume_analysis.weaknesses %}
+            <span class="skill-badge red">{{ w }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if not resume_analysis or (not resume_analysis.strengths and not resume_analysis.weaknesses) %}
+          <div class="text-center mt-2">
+            <small class="text-muted">Analysis data will appear after resume processing</small>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# ═══════════ 3. RESUME PARSING RESULTS ═══════════ #}
+    <div class="glass-card p-4 mb-4 anim-delay-3">
+      <h5 class="mb-3"><i class="fas fa-search-plus me-2 text-primary"></i>Resume Parsing Results</h5>
+
+      {% if resume_analysis and resume_analysis.parsed and not resume_analysis.get('error') %}
+      {% set parsed = resume_analysis.parsed %}
+      <div class="row g-3">
+        {# Technical Skills #}
+        {% if parsed.technical_skills or parsed.get('skills') %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-cogs me-1"></i>Technical Skills</div>
+            {% for skill in (parsed.technical_skills or parsed.get('skills', [])) %}
+            <span class="skill-badge blue">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Programming Languages #}
+        {% if parsed.programming_languages %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-code me-1"></i>Programming Languages</div>
+            {% for lang in parsed.programming_languages %}
+            <span class="skill-badge purple">{{ lang }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Frameworks #}
+        {% if parsed.frameworks %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-cubes me-1"></i>Frameworks</div>
+            {% for fw in parsed.frameworks %}
+            <span class="skill-badge cyan">{{ fw }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Databases #}
+        {% if parsed.databases %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-database me-1"></i>Databases</div>
+            {% for db in parsed.databases %}
+            <span class="skill-badge orange">{{ db }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Cloud Technologies #}
+        {% if parsed.cloud_technologies or parsed.get('cloud') %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-cloud me-1"></i>Cloud Technologies</div>
+            {% for cl in (parsed.cloud_technologies or parsed.get('cloud', [])) %}
+            <span class="skill-badge cyan">{{ cl }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Certifications #}
+        {% if parsed.certifications %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-certificate me-1"></i>Certifications</div>
+            {% for cert in parsed.certifications %}
+            <span class="skill-badge green">{{ cert }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Education #}
+        {% if parsed.education %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-graduation-cap me-1"></i>Education</div>
+            {% if parsed.education is string %}
+            <p class="mb-0 small">{{ parsed.education }}</p>
+            {% else %}
+            {% for edu in parsed.education %}
+            <p class="mb-1 small">{{ edu }}</p>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Projects #}
+        {% if parsed.projects %}
+        <div class="col-md-6">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-project-diagram me-1"></i>Projects</div>
+            <ul class="mb-0 small ps-3">
+              {% for proj in parsed.projects %}
+              <li class="mb-1">{{ proj }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+
+        {# Experience #}
+        {% if parsed.experience %}
+        <div class="col-12">
+          <div class="parsed-section">
+            <div class="parsed-section-title"><i class="fas fa-briefcase me-1"></i>Experience</div>
+            {% if parsed.experience is string %}
+            <p class="mb-0 small">{{ parsed.experience }}</p>
+            {% else %}
+            {% for exp in parsed.experience %}
+            <p class="mb-1 small">{{ exp }}</p>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% elif resume_analysis and resume_analysis.get('error') %}
+      <div class="alert alert-warning mb-0">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ resume_analysis.error }}
+      </div>
+
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-cloud-upload-alt d-block"></i>
+        <p class="mb-3">No resume has been uploaded yet. Upload your resume to unlock AI-powered parsing and insights.</p>
+        <a href="{{ url_for('student_profile') }}" class="btn btn-sm glow-btn text-white">
+          <i class="fas fa-upload me-1"></i>Upload Resume
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ═══════════ 4. SKILL GAP ANALYSIS ═══════════ #}
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6 anim-delay-4">
+        <div class="glass-card p-4 h-100">
+          <h5 class="mb-3"><i class="fas fa-puzzle-piece me-2 text-primary"></i>Skill Gap Analysis</h5>
+          {% if skill_gap and (skill_gap.mastered_skills or skill_gap.missing_skills) %}
+          {# Mastered Skills #}
+          {% if skill_gap.mastered_skills %}
+          <div class="mb-3">
+            <small class="text-muted d-block mb-2"><i class="fas fa-check-double text-success me-1"></i>Mastered Skills</small>
+            {% for sk in skill_gap.mastered_skills %}
+            <span class="skill-badge green">{{ sk }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Missing Skills #}
+          {% if skill_gap.missing_skills %}
+          <div>
+            <small class="text-muted d-block mb-2"><i class="fas fa-times-circle text-danger me-1"></i>Missing Skills</small>
+            {% for sk in skill_gap.missing_skills %}
+            <span class="skill-badge orange">{{ sk }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-chart-pie d-block"></i>
+            <p>Complete your profile and upload a resume to view skill gap analysis.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-lg-6 anim-delay-5">
+        <div class="glass-card p-4 h-100">
+          <h5 class="mb-3"><i class="fas fa-bullseye me-2 text-primary"></i>Skills Roadmap</h5>
+          {% if skill_gap and (skill_gap.recommended_skills or skill_gap.learning_order) %}
+
+          {# Recommended Skills #}
+          {% if skill_gap.recommended_skills %}
+          <div class="mb-3">
+            <small class="text-muted d-block mb-2"><i class="fas fa-star text-warning me-1"></i>Recommended to Learn</small>
+            {% for sk in skill_gap.recommended_skills %}
+            {% set prio = 'priority-high' if loop.index <= 2 else ('priority-med' if loop.index <= 4 else 'priority-low') %}
+            <div class="suggestion-item {{ prio }} mb-2">
+              <div class="suggestion-icon" style="background:rgba(245,158,11,0.12);color:#fcd34d;">
+                <span class="fw-bold" style="font-size:0.75rem;">#{{ loop.index }}</span>
+              </div>
+              <div class="small">{{ sk }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Learning Order #}
+          {% if skill_gap.learning_order %}
+          <div>
+            <small class="text-muted d-block mb-2"><i class="fas fa-route me-1"></i>Learning Order</small>
+            <ol class="mb-0 small ps-3">
+              {% for item in skill_gap.learning_order %}
+              <li class="mb-1">{{ item }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-map-signs d-block"></i>
+            <p>Your personalized skills roadmap will appear after analysis.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# ═══════════ 5. CAREER RECOMMENDATIONS ═══════════ #}
+    <div class="glass-card p-4 mb-4 anim-delay-5">
+      <h5 class="mb-4"><i class="fas fa-compass me-2 text-primary"></i>Career Recommendations</h5>
+      {% if career_recommendations %}
+      <div class="row g-3">
+        {% for career in career_recommendations %}
+        {% set career_lower = career|lower %}
+        {% if 'data scientist' in career_lower %}
+          {% set c_icon = 'fas fa-brain' %}
+          {% set c_desc = 'Leverage statistical analysis and ML to extract insights from complex datasets.' %}
+        {% elif 'ml engineer' in career_lower or 'machine learning' in career_lower %}
+          {% set c_icon = 'fas fa-robot' %}
+          {% set c_desc = 'Design and deploy machine learning models and production ML pipelines.' %}
+        {% elif 'full stack' in career_lower or 'fullstack' in career_lower %}
+          {% set c_icon = 'fas fa-layer-group' %}
+          {% set c_desc = 'Build end-to-end web applications spanning frontend and backend systems.' %}
+        {% elif 'data analyst' in career_lower %}
+          {% set c_icon = 'fas fa-chart-line' %}
+          {% set c_desc = 'Transform raw data into actionable business insights and visualizations.' %}
+        {% elif 'backend' in career_lower %}
+          {% set c_icon = 'fas fa-server' %}
+          {% set c_desc = 'Architect robust APIs, microservices, and server-side infrastructure.' %}
+        {% elif 'python' in career_lower %}
+          {% set c_icon = 'fab fa-python' %}
+          {% set c_desc = 'Build scalable applications, automation scripts, and data tools with Python.' %}
+        {% elif 'ai engineer' in career_lower or 'artificial intelligence' in career_lower %}
+          {% set c_icon = 'fas fa-microchip' %}
+          {% set c_desc = 'Develop AI systems including NLP, computer vision, and deep learning solutions.' %}
+        {% elif 'devops' in career_lower or 'cloud' in career_lower %}
+          {% set c_icon = 'fas fa-cloud' %}
+          {% set c_desc = 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation.' %}
+        {% elif 'frontend' in career_lower or 'ui' in career_lower %}
+          {% set c_icon = 'fas fa-palette' %}
+          {% set c_desc = 'Create beautiful, responsive user interfaces and interactive experiences.' %}
+        {% elif 'mobile' in career_lower or 'android' in career_lower or 'ios' in career_lower %}
+          {% set c_icon = 'fas fa-mobile-alt' %}
+          {% set c_desc = 'Develop native and cross-platform mobile applications.' %}
+        {% elif 'security' in career_lower or 'cyber' in career_lower %}
+          {% set c_icon = 'fas fa-shield-alt' %}
+          {% set c_desc = 'Protect systems and data through security analysis and threat mitigation.' %}
+        {% else %}
+          {% set c_icon = 'fas fa-briefcase' %}
+          {% set c_desc = 'A strong career path aligned with your skills and academic background.' %}
+        {% endif %}
+
+        <div class="col-md-4 col-sm-6">
+          <div class="career-card">
+            <div class="career-icon">
+              <i class="{{ c_icon }}"></i>
+            </div>
+            <h6 class="fw-semibold mb-1">{{ career }}</h6>
+            <p class="text-muted small mb-0">{{ c_desc }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-compass d-block"></i>
+        <p>Career recommendations will be generated once your resume is analyzed.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ═══════════ 6. PERSONALIZED LEARNING ROADMAP ═══════════ #}
+    <div class="glass-card p-4 mb-4 anim-delay-6">
+      <h5 class="mb-4"><i class="fas fa-road me-2 text-primary"></i>Personalized Learning Roadmap</h5>
+      {% if learning_roadmap %}
+      <div class="timeline-v">
+        {% for step in learning_roadmap %}
+        <div class="timeline-step">
+          <div class="timeline-dot">{{ step.week }}</div>
+          <div class="timeline-content">
+            <div class="timeline-week">Week {{ step.week }}</div>
+            {% if step.topics is string %}
+            <p class="small mb-0 text-muted">{{ step.topics }}</p>
+            {% else %}
+            <ul class="mb-0 small ps-3 text-muted">
+              {% for topic in step.topics %}
+              <li class="mb-1">{{ topic }}</li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-map-marked-alt d-block"></i>
+        <p>Your personalized week-by-week learning roadmap will appear after AI analysis.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ═══════════ 7. SUGGESTIONS & RECOMMENDATIONS ═══════════ #}
+    <div class="row g-4 mb-4">
+      {# Suggestions from resume analysis #}
+      <div class="col-lg-6 anim-delay-7">
+        <div class="glass-card p-4 h-100">
+          <h5 class="mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Resume Suggestions</h5>
+          {% if resume_analysis and resume_analysis.suggestions %}
+          {% for suggestion in resume_analysis.suggestions %}
+          <div class="suggestion-item">
+            <div class="suggestion-icon" style="background:rgba(245,158,11,0.12);color:#fcd34d;">
+              <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="small">{{ suggestion }}</div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-lightbulb d-block"></i>
+            <p>Resume improvement suggestions will appear here after analysis.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Recommendations from readiness analysis #}
+      <div class="col-lg-6 anim-delay-7">
+        <div class="glass-card p-4 h-100">
+          <h5 class="mb-3"><i class="fas fa-clipboard-check me-2 text-success"></i>Readiness Recommendations</h5>
+          {% if resume_analysis and resume_analysis.recommendations %}
+          {% for rec in resume_analysis.recommendations %}
+          <div class="suggestion-item">
+            <div class="suggestion-icon" style="background:rgba(34,197,94,0.12);color:#86efac;">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="small">{{ rec }}</div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-clipboard-check d-block"></i>
+            <p>Placement readiness recommendations will appear after your profile and resume are analyzed.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% include '_footer.html' %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

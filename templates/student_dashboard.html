@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard | PlacementAI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .ai-score-ring { display: flex; align-items: center; justify-content: center; }
+    .ai-score-ring svg { filter: drop-shadow(0 0 8px rgba(99,102,241,0.25)); }
+    .ai-insight-card { text-align: center; }
+    .ai-insight-card .card-label { font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.8rem; font-weight: 600; }
+    .skill-badge { display: inline-block; padding: 0.3rem 0.7rem; border-radius: 50px; font-size: 0.78rem; font-weight: 500; margin: 0.2rem; }
+    .skill-badge-green { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.35); color: #86efac; }
+    .skill-badge-orange { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.35); color: #fcd34d; }
+    .ai-cta-card { border: 2px dashed rgba(99,102,241,0.35); background: rgba(99,102,241,0.06); text-align: center; padding: 3rem 2rem; }
+    .ai-cta-card:hover { border-color: rgba(99,102,241,0.6); background: rgba(99,102,241,0.1); }
+    .ai-cta-icon { width: 80px; height: 80px; background: var(--gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; margin: 0 auto 1.2rem; box-shadow: 0 0 30px var(--primary-glow); }
+    .career-icon { width: 56px; height: 56px; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #a5b4fc; margin: 0 auto 0.6rem; }
+    .section-header-ai { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.2rem; }
+    .section-header-ai .ai-badge { background: var(--gradient); padding: 0.25rem 0.8rem; border-radius: 50px; font-size: 0.72rem; font-weight: 600; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+  </style>
+</head>
+<body>
+{% include '_navbar.html' %}
+<div class="page-wrapper pt-5">
+  <div class="container py-5">
+    <!-- ── Welcome Header ── -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+      <div>
+        <h2 class="gradient-text fw-bold">Welcome, {{ user.full_name or user.username }}</h2>
+        <p class="text-muted">Your placement readiness dashboard and latest prediction history.</p>
+      </div>
+      <div class="text-end">
+        <span class="badge bg-info text-dark">Role: Student</span>
+      </div>
+    </div>
+
+    <!-- ── Profile Completion + Placement Stats ── -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="glass-card p-4 animate-in">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <h6 class="text-muted mb-1">Profile Completion</h6>
+              <h3 class="fw-bold">{{ completion }}%</h3>
+            </div>
+            <div class="badge bg-success text-white py-2 px-3">{{ resume_status }}</div>
+          </div>
+          <div class="progress mb-3" style="height:12px;border-radius:999px;background:rgba(255,255,255,0.08);">
+            <div class="progress-bar bg-gradient" role="progressbar" style="width: {{ completion }}%;border-radius:999px;" aria-valuenow="{{ completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('student_profile') }}" class="btn btn-outline-light btn-sm">Update Profile</a>
+            <a href="{{ url_for('predict') }}" class="btn btn-primary btn-sm glow-btn">Run Placement Prediction</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="glass-card p-4 animate-in" style="background: rgba(255,255,255,0.06);">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="mini-stat p-3 rounded-3" style="background: rgba(255,255,255,0.08);">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted">Placement Probability</span>
+                  <i class="fas fa-arrow-up text-success"></i>
+                </div>
+                <div class="fs-3 fw-bold">{{ student.probability|round(2) if student and student.probability else '0' }}%</div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="mini-stat p-3 rounded-3" style="background: rgba(255,255,255,0.08);">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted">Placement Status</span>
+                  <i class="fas fa-bullseye text-primary"></i>
+                </div>
+                <div class="fs-3 fw-bold">{{ 'Placed' if student and student.prediction == 1 else 'Needs Improvement' if student else 'Pending' }}</div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="mini-stat p-3 rounded-3" style="background: rgba(255,255,255,0.08);">
+                <span class="text-muted">Skills Strength</span>
+                <div class="fs-3 fw-bold">{{ student and student.coding_score or '0' }}/100</div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="mini-stat p-3 rounded-3" style="background: rgba(255,255,255,0.08);">
+                <span class="text-muted">Resume Upload</span>
+                <div class="fs-3 fw-bold">{{ resume_status }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Quick Actions ── -->
+    <div class="glass-card p-4 mb-4 animate-in">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
+        <div>
+          <h5 class="mb-1">Quick Actions</h5>
+          <p class="text-muted mb-0">Access your profile, prediction tools and activity log.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{{ url_for('student_profile') }}" class="btn btn-outline-light btn-sm">Edit Profile</a>
+          <a href="{{ url_for('student_files') }}" class="btn btn-outline-light btn-sm">Document Vault</a>
+          <a href="{{ url_for('predict') }}" class="btn btn-primary btn-sm glow-btn">Try Prediction</a>
+          <a href="{{ url_for('statistics') }}" class="btn btn-outline-secondary btn-sm">Insights</a>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="border rounded-4 p-3 bg-white/5">
+            <div class="text-muted mb-2">Notifications</div>
+            <div class="small text-white-75">No new notifications yet. Complete your profile to boost placement readiness.</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded-4 p-3 bg-white/5">
+            <div class="text-muted mb-2">Recent Activity</div>
+            <ul class="list-unstyled small mb-0 text-white-75">
+              <li>Prediction run on latest profile</li>
+              <li>Profile updated recently</li>
+              <li>Awaiting resume upload</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded-4 p-3 bg-white/5">
+            <div class="text-muted mb-2">Resume Status</div>
+            <div class="fs-5 fw-semibold">{{ resume_status }}</div>
+            <div class="small text-white-75">Upload a PDF resume from your profile page.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         AI INSIGHTS SECTION
+    ══════════════════════════════════════════════ -->
+    {% if resume_score and resume_score > 0 %}
+    <div class="glass-card p-4 mb-4 animate-in">
+      <div class="section-header-ai">
+        <h5 class="mb-0"><i class="fas fa-brain me-2" style="color:#a5b4fc;"></i>AI Insights</h5>
+        <span class="ai-badge">Powered by AI</span>
+      </div>
+
+      <!-- ── AI Scores Row ── -->
+      <div class="row g-4 mb-4">
+        <!-- Resume Score -->
+        <div class="col-md-4">
+          <div class="glass-card p-4 ai-insight-card" style="background:rgba(255,255,255,0.04);">
+            <div class="card-label">Resume Score</div>
+            <div class="ai-score-ring mb-2">
+              {% set rs = resume_score|default(0) %}
+              {% set rs_filled = (rs * 263.89 / 100)|round(2) %}
+              {% set rs_remain = (263.89 - rs_filled)|round(2) %}
+              {% if rs >= 70 %}
+                {% set rs_color = '#22c55e' %}
+              {% elif rs >= 50 %}
+                {% set rs_color = '#f59e0b' %}
+              {% else %}
+                {% set rs_color = '#ef4444' %}
+              {% endif %}
+              <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="{{ rs_color }}" stroke-width="8" stroke-dasharray="{{ rs_filled }} {{ rs_remain }}" stroke-dashoffset="66" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                <text x="50" y="50" text-anchor="middle" dy="0.35em" fill="white" font-size="20" font-weight="700">{{ rs }}</text>
+              </svg>
+            </div>
+            <div class="small text-muted">Based on resume content analysis</div>
+          </div>
+        </div>
+
+        <!-- Placement Readiness Score -->
+        <div class="col-md-4">
+          <div class="glass-card p-4 ai-insight-card" style="background:rgba(255,255,255,0.04);">
+            <div class="card-label">Readiness Score</div>
+            <div class="ai-score-ring mb-2">
+              {% set rd = readiness_score|default(0) %}
+              {% set rd_filled = (rd * 263.89 / 100)|round(2) %}
+              {% set rd_remain = (263.89 - rd_filled)|round(2) %}
+              {% if rd >= 70 %}
+                {% set rd_color = '#22c55e' %}
+              {% elif rd >= 50 %}
+                {% set rd_color = '#f59e0b' %}
+              {% else %}
+                {% set rd_color = '#ef4444' %}
+              {% endif %}
+              <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="{{ rd_color }}" stroke-width="8" stroke-dasharray="{{ rd_filled }} {{ rd_remain }}" stroke-dashoffset="66" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                <text x="50" y="50" text-anchor="middle" dy="0.35em" fill="white" font-size="20" font-weight="700">{{ rd }}</text>
+              </svg>
+            </div>
+            <div class="small text-muted">Overall placement readiness</div>
+          </div>
+        </div>
+
+        <!-- Career Match -->
+        <div class="col-md-4">
+          <div class="glass-card p-4 ai-insight-card" style="background:rgba(255,255,255,0.04);">
+            <div class="card-label">Top Career Match</div>
+            <div class="career-icon">
+              <i class="fas fa-briefcase"></i>
+            </div>
+            {% if career_recommendations and career_recommendations|length > 0 %}
+              <div class="fs-5 fw-bold mb-1">{{ career_recommendations[0] }}</div>
+              {% if career_recommendations|length > 1 %}
+                <div class="small text-muted">+{{ career_recommendations|length - 1 }} more recommendation{{ 's' if career_recommendations|length > 2 else '' }}</div>
+              {% endif %}
+            {% else %}
+              <div class="fs-6 fw-semibold text-muted">No recommendations yet</div>
+              <div class="small text-muted">Upload resume for career matching</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Quick Skill Gap Summary ── -->
+      {% if skill_gap and (skill_gap.mastered_skills or skill_gap.missing_skills) %}
+      <div class="row g-4 mb-4">
+        <!-- Skills Mastered -->
+        <div class="col-md-6">
+          <div class="glass-card p-4" style="background:rgba(255,255,255,0.04);">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-check-circle text-success"></i>
+                <h6 class="mb-0">Skills Mastered</h6>
+              </div>
+              <span class="badge bg-success bg-opacity-25 text-success">{{ skill_gap.mastered_skills|length if skill_gap.mastered_skills else 0 }}</span>
+            </div>
+            <div>
+              {% if skill_gap.mastered_skills %}
+                {% for skill in skill_gap.mastered_skills[:5] %}
+                  <span class="skill-badge skill-badge-green">{{ skill }}</span>
+                {% endfor %}
+                {% if skill_gap.mastered_skills|length > 5 %}
+                  <span class="skill-badge skill-badge-green">+{{ skill_gap.mastered_skills|length - 5 }} more</span>
+                {% endif %}
+              {% else %}
+                <span class="small text-muted">No mastered skills detected yet.</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills to Learn -->
+        <div class="col-md-6">
+          <div class="glass-card p-4" style="background:rgba(255,255,255,0.04);">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+                <h6 class="mb-0">Skills to Learn</h6>
+              </div>
+              <span class="badge bg-warning bg-opacity-25 text-warning">{{ skill_gap.missing_skills|length if skill_gap.missing_skills else 0 }}</span>
+            </div>
+            <div>
+              {% if skill_gap.missing_skills %}
+                {% for skill in skill_gap.missing_skills[:5] %}
+                  <span class="skill-badge skill-badge-orange">{{ skill }}</span>
+                {% endfor %}
+                {% if skill_gap.missing_skills|length > 5 %}
+                  <span class="skill-badge skill-badge-orange">+{{ skill_gap.missing_skills|length - 5 }} more</span>
+                {% endif %}
+              {% else %}
+                <span class="small text-muted">No skill gaps detected — great job!</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ── View Full AI Analysis Button ── -->
+      <div class="text-center">
+        <a href="{{ url_for('ai_analysis') }}" class="btn btn-lg glow-btn px-5 py-2">
+          <i class="fas fa-chart-line me-2"></i>View Full AI Analysis
+        </a>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- ── Empty State: No Resume / No AI Score ── -->
+    <div class="glass-card ai-cta-card mb-4 animate-in" style="border-radius:16px;">
+      <div class="ai-cta-icon">
+        <i class="fas fa-robot"></i>
+      </div>
+      <h4 class="fw-bold mb-2">Unlock AI-Powered Insights</h4>
+      <p class="text-muted mb-4" style="max-width:500px;margin-left:auto;margin-right:auto;">
+        Upload your resume to get personalized AI analysis including resume scoring, career recommendations, skill gap analysis, and a tailored learning roadmap.
+      </p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="{{ url_for('student_profile') }}" class="btn btn-lg glow-btn px-4">
+          <i class="fas fa-upload me-2"></i>Upload Resume
+        </a>
+        <a href="{{ url_for('ai_analysis') }}" class="btn btn-outline-light btn-lg px-4">
+          <i class="fas fa-brain me-2"></i>AI Analysis Page
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Your Latest Profile ── -->
+    <div class="glass-card p-4 mb-4">
+      <h5 class="mb-3">Your Latest Profile</h5>
+      {% if student %}
+      <div class="row">
+        <div class="col-md-4 mb-3"><strong>Name</strong><div>{{ student.name }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Roll No</strong><div>{{ student.roll_no }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Branch</strong><div>{{ student.branch }}</div></div>
+        <div class="col-md-4 mb-3"><strong>CGPA</strong><div>{{ student.cgpa }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Aptitude</strong><div>{{ student.aptitude_score }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Coding</strong><div>{{ student.coding_score }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Communication</strong><div>{{ student.communication_score }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Internships</strong><div>{{ student.internship }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Projects</strong><div>{{ student.projects }}</div></div>
+        <div class="col-md-4 mb-3"><strong>Backlogs</strong><div>{{ student.backlogs }}</div></div>
+      </div>
+      {% else %}
+      <p class="text-muted">No student profile found yet. Use the prediction form to generate your first result.</p>
+      {% endif %}
+    </div>
+
+    <!-- ── Branch Placement Summary ── -->
+    <div class="glass-card p-4">
+      <h5 class="mb-3">Branch Placement Summary</h5>
+      <div class="table-responsive">
+        <table class="table table-dark table-striped mb-0">
+          <thead>
+            <tr><th>Branch</th><th>Total</th><th>Placed</th><th>Rate</th></tr>
+          </thead>
+          <tbody>
+            {% for branch in branch_stats %}
+            <tr>
+              <td>{{ branch.branch }}</td>
+              <td>{{ branch.total }}</td>
+              <td>{{ branch.placed }}</td>
+              <td>{{ ((branch.placed / branch.total * 100)|round(1)) if branch.total else 0 }}%</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted">No branch data available yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% include '_footer.html' %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predict Placement | PlacementAI</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% include '_navbar.html' %}
+<div class="page-wrapper">
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="text-center mb-4">
+        <h2 class="gradient-text fw-bold">Placement Prediction</h2>
+        <p class="text-muted">Enter your academic and skill details to get your placement probability</p>
+      </div>
+
+      {% if result %}
+      <!-- Result Card -->
+      <div class="result-card glass-card mb-4 text-center p-4 animate-in">
+        <div class="prob-ring mb-3">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12"/>
+            <circle cx="80" cy="80" r="70" fill="none"
+              stroke="{{ '#22c55e' if result.placed else '#ef4444' }}"
+              stroke-width="12" stroke-linecap="round"
+              stroke-dasharray="{{ (result.probability / 100) * 439.8 }} 439.8"
+              stroke-dashoffset="109.96" transform="rotate(-90 80 80)"
+              class="prob-arc"/>
+          </svg>
+          <div class="prob-text">
+            <span class="prob-num">{{ result.probability }}%</span>
+            <span class="prob-label">Chance</span>
+          </div>
+        </div>
+        <div class="badge fs-5 px-4 py-2 bg-{{ result.color }} mb-2">
+          <i class="fas fa-{{ 'check-circle' if result.placed else 'times-circle' }} me-2"></i>
+          {{ result.status }}
+        </div>
+        <p class="text-muted mt-2">
+          {{ "Congratulations! Based on your profile, you have a high probability of getting placed." if result.placed
+             else "Keep working on your skills. Focus on improving CGPA, coding, and communication skills." }}
+        </p>
+        <div class="row g-3 mt-3">
+          <div class="col-6"><div class="mini-stat glass-card p-2"><span class="text-muted small">CGPA</span><br><strong>{{ form_data.get('cgpa','—') }}</strong></div></div>
+          <div class="col-6"><div class="mini-stat glass-card p-2"><span class="text-muted small">Coding Score</span><br><strong>{{ form_data.get('coding_score','—') }}</strong></div></div>
+          <div class="col-6"><div class="mini-stat glass-card p-2"><span class="text-muted small">Aptitude</span><br><strong>{{ form_data.get('aptitude_score','—') }}</strong></div></div>
+          <div class="col-6"><div class="mini-stat glass-card p-2"><span class="text-muted small">Projects</span><br><strong>{{ form_data.get('projects','—') }}</strong></div></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Form -->
+      <div class="glass-card p-4">
+        <form method="POST" id="predictForm" novalidate>
+          {{ csrf_token() }}
+          <!-- Personal Info -->
+          <h6 class="section-divider mb-3"><i class="fas fa-user me-2"></i>Personal Information</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Full Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Rahul Sharma"
+                     value="{{ form_data.get('name','') }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Roll Number *</label>
+              <input type="text" name="roll_no" class="form-control" placeholder="e.g. CS2021001"
+                     value="{{ form_data.get('roll_no','') }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="student@college.edu"
+                     value="{{ form_data.get('email','') }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Branch *</label>
+              <select name="branch" class="form-select" required>
+                <option value="">Select Branch</option>
+                {% for b in ['CSE','IT','ECE','EEE','ME','CE'] %}
+                <option value="{{ b }}" {{ 'selected' if form_data.get('branch')==b }}>{{ b }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Academic Info -->
+          <h6 class="section-divider mb-3"><i class="fas fa-book me-2"></i>Academic Details</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">CGPA (0–10) *</label>
+              <input type="number" name="cgpa" class="form-control" step="0.01" min="0" max="10"
+                     placeholder="e.g. 8.5" value="{{ form_data.get('cgpa','') }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">10th % *</label>
+              <input type="number" name="tenth_percentage" class="form-control" step="0.01" min="0" max="100"
+                     placeholder="e.g. 85" value="{{ form_data.get('tenth_percentage','') }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">12th % *</label>
+              <input type="number" name="twelfth_percentage" class="form-control" step="0.01" min="0" max="100"
+                     placeholder="e.g. 80" value="{{ form_data.get('twelfth_percentage','') }}" required>
+            </div>
+          </div>
+
+          <!-- Skills -->
+          <h6 class="section-divider mb-3"><i class="fas fa-star me-2"></i>Skills & Experience</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">Aptitude Score (0–100) *</label>
+              <input type="number" name="aptitude_score" class="form-control" min="0" max="100"
+                     placeholder="e.g. 75" value="{{ form_data.get('aptitude_score','') }}" required>
+              <input type="range" class="form-range mt-1" min="0" max="100" id="aptRange"
+                     value="{{ form_data.get('aptitude_score',50) }}" oninput="syncInput(this,'aptitude_score')">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Coding Score (0–100) *</label>
+              <input type="number" name="coding_score" class="form-control" min="0" max="100"
+                     placeholder="e.g. 70" value="{{ form_data.get('coding_score','') }}" required>
+              <input type="range" class="form-range mt-1" min="0" max="100"
+                     value="{{ form_data.get('coding_score',50) }}" oninput="syncInput(this,'coding_score')">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Communication (0–100) *</label>
+              <input type="number" name="communication_score" class="form-control" min="0" max="100"
+                     placeholder="e.g. 65" value="{{ form_data.get('communication_score','') }}" required>
+              <input type="range" class="form-range mt-1" min="0" max="100"
+                     value="{{ form_data.get('communication_score',50) }}" oninput="syncInput(this,'communication_score')">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Internships</label>
+              <select name="internship" class="form-select">
+                {% for i in range(4) %}
+                <option value="{{ i }}" {{ 'selected' if form_data.get('internship','')|string==i|string }}>{{ i }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Projects Completed</label>
+              <select name="projects" class="form-select">
+                {% for i in range(7) %}
+                <option value="{{ i }}" {{ 'selected' if form_data.get('projects','')|string==i|string }}>{{ i }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Active Backlogs</label>
+              <select name="backlogs" class="form-select">
+                {% for i in range(6) %}
+                <option value="{{ i }}" {{ 'selected' if form_data.get('backlogs','')|string==i|string }}>{{ i }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="d-grid mt-2">
+            <button type="submit" class="btn btn-primary btn-lg glow-btn" id="submitBtn">
+              <span id="btnText"><i class="fas fa-rocket me-2"></i>Predict My Placement</span>
+              <span id="btnLoader" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Analyzing...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% include '_footer.html' %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+function syncInput(range, name) {
+  document.querySelector(`input[name="${name}"]`).value = range.value;
+}
+document.getElementById('predictForm').addEventListener('submit', function() {
+  document.getElementById('btnText').classList.add('d-none');
+  document.getElementById('btnLoader').classList.remove('d-none');
+});
+// Sync ranges from inputs
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', function() {
+    const field = this.previousElementSibling;
+    if (field) field.value = this.value;
+  });
+});
+</script>
+</body>
+</html>

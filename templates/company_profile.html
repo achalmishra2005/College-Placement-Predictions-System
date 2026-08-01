@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Company Profile{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="glass-card p-4">
+        <h3 class="mb-3 gradient-text">Company Profile</h3>
+        <form method="POST">
+          {{ form.hidden_tag() }}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Company Name</label>
+              {{ form.company_name(class='form-control') }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Company Address</label>
+              {{ form.company_address(class='form-control', rows=4) }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Company Website</label>
+              {{ form.company_website(class='form-control') }}
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">Save Company Profile</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Environment secrets ─────────────────────────────────────
+.env
+*.env
+!.env.example
+
+# ── SQLite database ─────────────────────────────────────────
+database/*.db
+database/*.sqlite3
+
+# ── Uploaded files ──────────────────────────────────────────
+static/uploads/*
+!static/uploads/.gitkeep
+
+# ── ML model (large binary — commit or upload separately) ───
+# Uncomment the line below if you want to exclude the model from git.
+# model.pkl
+
+# ── IDE / OS ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.lnk
+.vscode/
+.idea/
+
+# ── Vercel ──────────────────────────────────────────────────
+.vercel/

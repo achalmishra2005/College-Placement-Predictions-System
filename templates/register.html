@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | PlacementAI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="login-page">
+<div class="login-bg">
+  <div class="login-container">
+    <div class="glass-card p-5 login-card">
+      <div class="text-center mb-4">
+        <div class="login-icon mb-3"><i class="fas fa-user-plus"></i></div>
+        <h3 class="gradient-text fw-bold">Create Student Account</h3>
+        <p class="text-muted small">Join PlacementAI and track your placement readiness</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} py-2">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Username</label>
+            {{ form.username(class='form-control', placeholder='Choose a username (e.g. achal123)') }}
+            {% if form.username.errors %}
+              <div class="invalid-feedback d-block">{{ form.username.errors[0] }}</div>
+            {% endif %}
+            <small class="text-muted">You will use this to log in</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Full Name</label>
+            {{ form.full_name(class='form-control', placeholder='Rahul Sharma') }}
+            {% if form.full_name.errors %}
+              <div class="invalid-feedback d-block">{{ form.full_name.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            {{ form.email(class='form-control', placeholder='student@college.edu') }}
+            {% if form.email.errors %}
+              <div class="invalid-feedback d-block">{{ form.email.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Password</label>
+            {{ form.password(class='form-control', placeholder='Create a password') }}
+            {% if form.password.errors %}
+              <div class="invalid-feedback d-block">{{ form.password.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Confirm Password</label>
+            {{ form.confirm_password(class='form-control', placeholder='Re-enter password') }}
+            {% if form.confirm_password.errors %}
+              <div class="invalid-feedback d-block">{{ form.confirm_password.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">College</label>
+            {{ form.college(class='form-control', placeholder='ABC Engineering College') }}
+            {% if form.college.errors %}
+              <div class="invalid-feedback d-block">{{ form.college.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Branch</label>
+            {{ form.branch(class='form-control', placeholder='Computer Science') }}
+            {% if form.branch.errors %}
+              <div class="invalid-feedback d-block">{{ form.branch.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Year</label>
+            {{ form.year(class='form-select') }}
+            {% if form.year.errors %}
+              <div class="invalid-feedback d-block">{{ form.year.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">CGPA</label>
+            {{ form.cgpa(class='form-control', placeholder='8.5') }}
+            {% if form.cgpa.errors %}
+              <div class="invalid-feedback d-block">{{ form.cgpa.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Skills</label>
+            {{ form.skills(class='form-control', placeholder='Python, Data Science, SQL') }}
+            {% if form.skills.errors %}
+              <div class="invalid-feedback d-block">{{ form.skills.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Phone Number</label>
+            {{ form.phone(class='form-control', placeholder='+91 98765 43210') }}
+            {% if form.phone.errors %}
+              <div class="invalid-feedback d-block">{{ form.phone.errors[0] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-lg glow-btn w-100">
+              <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div class="text-center mt-4">
+        <a href="{{ url_for('login') }}" class="text-muted small">Already have an account? Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
